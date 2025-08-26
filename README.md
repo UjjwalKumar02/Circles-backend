@@ -11,3 +11,14 @@
 
 3. Routes
 -- get users route
+
+4. Logout, Midleware setup
+-- need to add protection of routes
+
+5. Auth sync with frontend
+
+6. Running process modified  
+```bash
+npm run build
+npm run start
+```

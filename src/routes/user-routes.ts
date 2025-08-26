@@ -30,7 +30,7 @@ router.get("/", async (_req: Request, res: Response) => {
   res.json(users);
 });
 
-router.get("/me", authenticate, (req, res) => {
+router.get("/me",authenticate, (req, res) => {
   res.json({ user: (req as any).user });
 });
 
