@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String       @id @default(cuid())
+  googleId    String       @unique
+  email       String       @unique
+  name        String
+  avatar      String?
+  description String?
+  createdAt   DateTime     @default(now())
+  communities Membership[]
+  posts       Post[]
+}
+
+model Community {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  memberships Membership[]
+  posts       Post[]
+  createdAt   DateTime     @default(now())
+}
+
+model Membership {
+  id          String @id @default(cuid())
+  userId      String
+  communityId String
+  role        Role   @default(MEMBER)
+
+  user      User      @relation(fields: [userId], references: [id])
+  community Community @relation(fields: [communityId], references: [id])
+
+  @@unique([userId, communityId])
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Post {
+  id             String   @id @default(cuid())
+  content        String
+  anonymous      Boolean  @default(false)
+  isAnnouncement Boolean  @default(false)
+  authorId       String
+  communityId    String?
+  createdAt      DateTime @default(now())
+
+  author    User       @relation(fields: [authorId], references: [id])
+  community Community? @relation(fields: [communityId], references: [id])
+}
