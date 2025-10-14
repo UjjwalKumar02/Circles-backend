@@ -13,12 +13,13 @@
 -- get users route
 
 4. Logout, Midleware setup
--- need to add protection of routes
+-- need to modify protection of routes
 
 5. Auth sync with frontend
 
 6. Running process modified  
 ```bash
+npx prisma migrate dev --name names  // after change in db
 npm run build
 npm run start
 ```

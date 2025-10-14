@@ -6,33 +6,85 @@ import { authenticate } from "../middlewares/auth-middleware.js";
 
 const router = Router();
 
-router.post("/", async (req: Request, res: Response) => {
-  try {
-    const { email, name } = req.body;
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        googleId: "test-google-id",
-      },
+// Checking Private route in frontend
+router.get("/me", authenticate, (req, res) => {
+  res.json({ user: (req as any).user });
+});
+
+
+// GET my user details
+router.get("/details", authenticate, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    const userDetails = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        name: true,
+        email: true,
+        avatar: true,
+        description: true
+      }
     });
 
-    res.json(user);
+    if (!userDetails) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    return res.json(userDetails);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "something went wrong" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get("/", async (_req: Request, res: Response) => {
-  const users = await prisma.user.findMany();
-  res.json(users);
+
+// Update user details
+router.put("/update", authenticate, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, description } = req.body;
+
+    if (!name && !description) {
+      return res.status(404).json({ error: "Name and Description are required" })
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(name && { name }),
+        ...(description && { description }),
+      },
+      select: {
+        name: true,
+        email: true,
+        avatar: true,
+        description: true
+      }
+    });
+
+    return res.json({ user: updatedUser });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-router.get("/me",authenticate, (req, res) => {
-  res.json({ user: (req as any).user });
-});
+
+// Delete user
+router.delete("/delete", authenticate, async (req: any, res) => {
+  try {
+    const userId = req.user.id;
+    const user = await prisma.user.delete({
+      where: { id: userId }
+    });
+    return res.json("User deleted successfully!");
+  } catch (error) {
+    if (error.code === "P2025") {
+      return res.status(404).json({ error: "User not found" });
+    }
+    return res.status(500).json({ error: "Error while deleting user" });
+  }
+})
 
 
 export default router;

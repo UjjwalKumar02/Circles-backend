@@ -8,36 +8,27 @@ datasource db {
 }
 
 model User {
-  id          String       @id @default(cuid())
-  googleId    String       @unique
-  email       String       @unique
+  id          String          @id @default(cuid())
+  googleId    String          @unique
+  email       String          @unique
   name        String
   avatar      String?
   description String?
-  createdAt   DateTime     @default(now())
-  communities Membership[]
+  communities UserCommunity[]
   posts       Post[]
+  likes       Like[]
+  comments    Comment[]
+  createdAt   DateTime        @default(now())
 }
 
 model Community {
-  id          String       @id @default(cuid())
-  name        String       @unique
+  id          String          @id @default(cuid())
+  name        String          @unique
+  slug        String          @unique
   description String?
-  memberships Membership[]
+  members     UserCommunity[]
   posts       Post[]
-  createdAt   DateTime     @default(now())
-}
-
-model Membership {
-  id          String @id @default(cuid())
-  userId      String
-  communityId String
-  role        Role   @default(MEMBER)
-
-  user      User      @relation(fields: [userId], references: [id])
-  community Community @relation(fields: [communityId], references: [id])
-
-  @@unique([userId, communityId])
+  createdAt   DateTime        @default(now())
 }
 
 enum Role {
@@ -45,15 +36,51 @@ enum Role {
   MEMBER
 }
 
+model UserCommunity {
+  id          String @id @default(cuid())
+  userId      String
+  communityId String
+  role        Role   @default(MEMBER)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community Community @relation(fields: [communityId], references: [id])
+
+  @@unique([userId, communityId])
+}
+
 model Post {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   content        String
-  anonymous      Boolean  @default(false)
-  isAnnouncement Boolean  @default(false)
   authorId       String
   communityId    String?
-  createdAt      DateTime @default(now())
+  anonymous      Boolean   @default(false)
+  isAnnouncement Boolean   @default(false)
+  likes          Like[]
+  comments       Comment[]
+  createdAt      DateTime  @default(now())
 
-  author    User       @relation(fields: [authorId], references: [id])
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
   community Community? @relation(fields: [communityId], references: [id])
+}
+
+model Like {
+  id        String @id @default(cuid())
+  postId    String
+  likedById String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [likedById], references: [id], onDelete: Cascade)
+
+  @@unique([postId, likedById])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
 }

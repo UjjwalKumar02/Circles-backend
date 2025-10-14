@@ -1,10 +1,20 @@
+// {
+//   "compilerOptions": {
+//     "module": "NodeNext",
+//     "moduleResolution": "NodeNext",
+//     "target": "ES2020",
+//     "sourceMap": true,
+//     "outDir": "dist",
+//   },
+//   "include": ["src/**/*"],
+// }
+
 {
   "compilerOptions": {
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "target": "ES2020",
-    "sourceMap": true,
-    "outDir": "dist",
-  },
-  "include": ["src/**/*"],
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "bundler", // or "node16"
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  }
 }
