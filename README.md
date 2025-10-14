@@ -1,7 +1,10 @@
 # Circles (Backend)
 
 
-### Development process:
+- **Tech Stack**: Express.js, PostgreSQL, Prisma
+
+
+<!-- ### Development process:
 
 1. Prisma setup
 -- models
@@ -22,4 +25,4 @@
 npx prisma migrate dev --name names  // after change in db
 npm run build
 npm run start
-```
+``` -->
