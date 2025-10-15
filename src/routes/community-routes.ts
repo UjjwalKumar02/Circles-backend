@@ -82,7 +82,7 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
 
 
 // Explore all communities
-router.get("/", authenticate, async (_req, res) => {
+router.get("/explore", authenticate, async (_req, res) => {
   const all = await prisma.community.findMany({
     orderBy: { createdAt: "desc" },
   });
