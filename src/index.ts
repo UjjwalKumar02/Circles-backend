@@ -2,16 +2,15 @@ import type { Application, Request, Response } from "express";
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import passport from "./lib/passport.js";
 import userRoutes from "./routes/user-routes.js";
 import authRoutes from "./routes/auth-routes.js"
 import communityRoutes from "./routes/community-routes.js"
-import passport from "./lib/passport.js";
-import cookieParser from "cookie-parser";
 import { authenticate } from "./middlewares/auth-middleware.js";
 
 
 dotenv.config();
-
 const app: Application = express();
 
 
@@ -20,16 +19,17 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use(passport.initialize());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 
-app.get("/", (req: Request, res: Response) => {
+app.get("/", (_req, res) => {
   res.send("Circles API is running...")
 });
 
 
-app.get("/proxy-image", authenticate, async (req, res: any) => {
+// Proxy google avatars
+app.get("/proxy-image", authenticate, async (req: any, res) => {
   const imageUrl = req.query.url as string;
 
   if (!imageUrl || !imageUrl.startsWith("https://lh3.googleusercontent.com")) {
@@ -37,7 +37,6 @@ app.get("/proxy-image", authenticate, async (req, res: any) => {
   }
 
   try {
-    console.log("Fetching image...")
     const response = await fetch(imageUrl);
 
     if (!response.ok) {
@@ -50,16 +49,14 @@ app.get("/proxy-image", authenticate, async (req, res: any) => {
 
     res.setHeader('Content-Type', contentType);
     res.send(buffer);
-    console.log("Image loading confirmed")
 
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Failed to load image" });
   }
 });
 
 
-// Routes
+// Mount routes
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
 app.use("/api/communities", communityRoutes);

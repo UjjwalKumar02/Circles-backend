@@ -1,15 +1,30 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction  } from "express";
 import jwt from "jsonwebtoken";
 import prisma from "../lib/prisma.js";
+
 
 interface JwtPayload {
   id: string;
   email: string;
 }
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+
+// declare global {
+//   namespace Express {
+//     interface Request {
+//       user?: { id: string; email: string; name?: string; avatar?: string };
+//     }
+//   }
+// }
+
+
+export const authenticate = async (
+  req: any,
+  res: any,
+  next: NextFunction
+) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies?.token;
 
     if (!token) {
       return res.status(401).json({ error: "No token provided" });
@@ -29,6 +44,6 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     next();
 
   } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
+    res.status(401).json({ error: "Invalid or expired token" });
   }
 };

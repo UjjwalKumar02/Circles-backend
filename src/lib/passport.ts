@@ -16,7 +16,9 @@ passport.use(
         const googleId = profile.id;
         const avatar = profile.photos?.[0]?.value;
 
-        if (!email) return done(new Error("No email from Google"), null);
+        if (!email) {
+          return done(new Error("No email from Google"), null);
+        }
 
         let user = await prisma.user.findUnique({ where: { email } });
 
@@ -36,9 +38,9 @@ passport.use(
           });
         }
 
-        return done(null, user)
+        done(null, user)
       } catch (error) {
-        return done(error as any, null)
+        done(error, null)
       }
     }
   )

@@ -1,17 +1,16 @@
-import { Router } from "express"
+import type { Request, Response } from "express";
+import { Router } from "express";
 import { authenticate } from "../middlewares/auth-middleware.js";
 import prisma from "../lib/prisma.js";
 import { slugify } from "../utils/slugify.js";
-import { error } from "console";
 
 
 const router = Router();
 
 
-// Create a new community
+// Create community
 router.post("/", authenticate, async (req: any, res) => {
   const { name, description } = req.body;
-  const slug = slugify(name);
 
   if (!name) {
     return res.status(400).json({ error: "Name is required" });
@@ -21,27 +20,27 @@ router.post("/", authenticate, async (req: any, res) => {
     const community = await prisma.community.create({
       data: { 
         name,
-        slug,
+        slug: slugify(name),
         description
       },
     });
 
     await prisma.userCommunity.create({
       data: {
-        userId: req.user.id,
+        userId: req.user!.id,
         communityId: community.id,
         role: "ADMIN",
       },
     });
 
-    return res.json(community);
+    res.json(community);
   } catch (error) {
     return res.status(500).json({ error: "Community creation failed" });
   }
 });
 
 
-// Join a community
+// Join community
 router.post("/:id/join", authenticate, async (req: any, res) => {
   const userId = req.user.id;
   const communityId = req.params.id;
@@ -63,7 +62,7 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
     });
 
     if (alreadyJoined) {
-      return res.status(400).json({ error: "Already a member of this community" });
+      return res.status(400).json({ error: "Already a member" });
     }
 
     const join = await prisma.userCommunity.create({
@@ -73,15 +72,14 @@ router.post("/:id/join", authenticate, async (req: any, res) => {
       },
     });
 
-    return res.json(join);
+    res.json(join);
   } catch (error) {
-    console.error("Join error:", error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Join failed" });
   }
 });
 
 
-// Explore all communities
+// Explore
 router.get("/explore", authenticate, async (_req, res) => {
   const all = await prisma.community.findMany({
     orderBy: { createdAt: "desc" },
@@ -99,7 +97,7 @@ router.get("/my", authenticate, async (req: any, res) => {
     include: { community: true },
   });
 
-  return res.json(
+  res.json(
     communities.map(m => ({
       role: m.role,
       community: {
@@ -114,9 +112,9 @@ router.get("/my", authenticate, async (req: any, res) => {
 });
 
 
-// Get all posts of the community
+// Community posts
 router.get('/:slug', authenticate, async (req: any, res) => {
-  let { slug } = req.params;
+  const { slug } = req.params;
   const userId = req.user.id;
 
   try {
@@ -137,25 +135,19 @@ router.get('/:slug', authenticate, async (req: any, res) => {
       return res.status(404).json({ error: "Community not found"});
     }
 
-    const postsWithLiked = community.posts.map((post) => {
-      const likedByUser = post.likes.some(like => like.likedById === userId);
-      return {
-        ...post,
-        likedByUser,
-      };
-    });
+    const posts = community.posts.map((p) => ({
+      ...p,
+      likedByUser: p.likes.some((l) => l.likedById === userId),
+    }));
 
-    res.json({
-      ...community,
-      posts: postsWithLiked
-    });
+    res.json({ ...community, posts });
   } catch (error) {
     res.status(500).json({ error: "Internal server error"});
   }
 });
 
 
-// Create a Post
+// Create Post
 router.post('/:slug', authenticate, async (req: any, res) => {
   const { slug } = req.params;
   const { content, isAnonymous, isAnnouncement } = req.body;
@@ -186,88 +178,65 @@ router.post('/:slug', authenticate, async (req: any, res) => {
     res.status(202).json(newPost);
   } catch (error) {
     console.log(error);
-    return res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal server error" });
   }
 })
 
 
-// Like updation
+// Like toggle
 router.post("/posts/:postId/like", authenticate, async (req: any, res) => {
   const { postId } = req.params;
   const userId = req.user.id;
 
   try {
     const existing = await prisma.like.findUnique({
-      where: {
-        postId_likedById: {
-          postId,
-          likedById: userId,
-        }
-      }
+      where: { postId_likedById: { postId, likedById: userId } },
     });
 
     if (existing) {
       await prisma.like.delete({
-        where: {
-          postId_likedById: {
-            postId,
-            likedById: userId,
-          }
-        }
+        where: { postId_likedById: { postId, likedById: userId } },
       });
       return res.json({ liked: false });
-    } else {
-      await prisma.like.create({
-        data: {
-          postId,
-          likedById: userId,
-        }
-      });
-      return res.json({ liked: true });
-    }
+    } 
+
+    await prisma.like.create({
+      data: { postId, likedById: userId },
+    });
+
+    res.json({ liked: true });
   } catch (error) {
-    console.log(error);
     res.status(500).json({ error: "Internal server error"});
   }
 });
 
 
-// checking is admin
+// Check Admin
 router.get("/:slug/isadmin", authenticate, async (req: any, res) => {
   const { slug } = req.params;
   const userId = req.user.id;
 
-  if (!userId && !slug) {
-    return res.status(404).json({ error: "cant read userid and slug"});
-  }
-
   try {
-    const communityId = await prisma.community.findUnique({
+    const community = await prisma.community.findUnique({
     where: { slug },
     select: { id: true }
   })
-  console.log(communityId);
 
-  const community = await prisma.userCommunity.findUnique({
+  if (!community) {
+    return res.status(404).json({ error: "Community not found" });
+  }
+
+  const membership = await prisma.userCommunity.findUnique({
     where: {
-      userId_communityId: {
-        userId, 
-        communityId: communityId.id
-      }
-    }
+      userId_communityId: { userId, communityId: community.id }
+    },
   });
 
-  console.log(community);
-
-  if (community.role === "ADMIN") {
-    return res.json({ isAdmin: true });
-  } else {
-    return res.json({ isAdmin: false });
-  }
+  res.json({ isAdmin: membership?.role === "ADMIN"});
   } catch (error) {
-    console.log(error);
-    return res.status(500).json({ error: "error in checking admin from server side" })
+    res.status(500).json({ error: "Error checking admin" })
   }
 });
+
 
 export default router;
