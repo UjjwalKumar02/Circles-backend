@@ -29,6 +29,7 @@ passport.use(
               googleId,
               name: profile.displayName,
               avatar,
+              username: null,
             },
           });
         } else if (!user.googleId) {

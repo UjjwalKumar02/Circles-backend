@@ -92,13 +92,17 @@ router.get("/explore", authenticate, async (_req, res) => {
 router.get("/my", authenticate, async (req: any, res) => {
   const userId = req.user.id;
 
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  })
+
   const communities = await prisma.userCommunity.findMany({
     where: { userId },
     include: { community: true },
   });
 
   res.json(
-    communities.map(m => ({
+    {"communities" : communities.map(m => ({
       role: m.role,
       community: {
         id: m.community.id,
@@ -107,8 +111,9 @@ router.get("/my", authenticate, async (req: any, res) => {
         description: m.community.description,
         createdAt: m.community.createdAt,
       },
-    }))
-  );
+    })),
+    "hasUsername": user.username != null,
+  });
 });
 
 
@@ -124,7 +129,7 @@ router.get('/:slug', authenticate, async (req: any, res) => {
         posts: {
           orderBy: { createdAt: 'desc' },
           include: {
-            author: { select: { name: true, avatar: true } },
+            author: { select: { username: true, name: true, avatar: true } },
             likes: { select: { likedById: true } }
           }
         }

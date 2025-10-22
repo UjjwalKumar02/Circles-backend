@@ -1,9 +1,42 @@
 import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import { authenticate } from "../middlewares/auth-middleware.js";
+import { error } from "console";
 
 
 const router = Router();
+
+// Register user
+router.post("/register", authenticate, async (req: any, res) => {
+  const { username, name, description } = req.body;
+
+  if (!username && !name) {
+    return res.status(402).json({ error: "Username and name is empty!" })
+  }
+
+  try {
+    const existing = await prisma.user.findFirst({
+      where: { username: username }
+    })
+
+    if (existing) {
+      return res.status(400).json({ error: "username already taken" });
+    }
+
+    const user = await prisma.user.update({
+      data: {
+        username: username,
+        name: name,
+        description: description || "",
+      },
+      where: { id: req.user.id }
+    });
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 
 // Check Private route
@@ -19,6 +52,7 @@ router.get("/details", authenticate, async (req: any, res) => {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        username: true,
         name: true,
         email: true,
         avatar: true,
@@ -40,20 +74,22 @@ router.get("/details", authenticate, async (req: any, res) => {
 // Update user details
 router.put("/update", authenticate, async (req: any, res) => {
   const userId = req.user.id;
-  const { name, description } = req.body;
+  const { username, name, description } = req.body;
 
-  if (!name && !description) {
-    return res.status(404).json({ error: "Name and Description are required" })
+  if (!username && !name && !description) {
+    return res.status(404).json({ error: "All fields are required" })
   }
 
   try {
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
+        ...(username && { username }),
         ...(name && { name }),
         ...(description && { description }),
       },
       select: {
+        username: true,
         name: true,
         email: true,
         avatar: true,
