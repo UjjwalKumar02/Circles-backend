@@ -178,9 +178,27 @@ router.post('/:slug', authenticate, async (req: any, res) => {
         anonymous: isAnonymous || false,
         isAnnouncement: isAnnouncement || false,
       },
+      include: {
+        author: { select: { username: true, name: true, avatar: true } },
+        likes: { select: { likedById: true } },
+      },
     });
 
-    res.status(202).json(newPost);
+    // --- Emit Socket.IO event to all users in this community ---
+    const io = req.app.get("io");
+    // io.to(community.id).emit("new_post", newPost);
+
+    // res.status(202).json(newPost);
+
+
+    
+    const postWithMeta = {
+      ...newPost,
+      likedByUser: false, // ✅ current user obviously hasn’t liked yet
+    };
+
+    io.to(community.id).emit("new_post", postWithMeta);
+    res.status(201).json(postWithMeta);
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -202,14 +220,34 @@ router.post("/posts/:postId/like", authenticate, async (req: any, res) => {
       await prisma.like.delete({
         where: { postId_likedById: { postId, likedById: userId } },
       });
-      return res.json({ liked: false });
+      // return res.json({ liked: false });
     } 
 
     await prisma.like.create({
       data: { postId, likedById: userId },
     });
 
-    res.json({ liked: true });
+    // res.json({ liked: true });
+
+    const updatedPost = await prisma.post.findUnique({
+      where: { id: postId },
+      include: {
+        likes: true,
+        author: true,
+        community: { select: { id: true } }, // needed to know which room to emit to
+      },
+    });
+
+    // ✅ Emit socket event to everyone in that community
+    const io = req.app.get("io");
+    if (io && updatedPost?.community?.id) {
+      io.to(updatedPost.community.id).emit("update_like", updatedPost);
+    }
+
+    return res.json({
+      liked: !existing,
+      likes: updatedPost.likes.length,
+    });
   } catch (error) {
     res.status(500).json({ error: "Internal server error"});
   }
