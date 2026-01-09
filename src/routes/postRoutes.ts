@@ -26,6 +26,3 @@ router.post("/:postId/like", authMiddleware, toggleLike);
 router.post("/:postId/comment", authMiddleware, makeComment);
 
 export default router;
-
-// get user's posts
-// router.get("/user/bulk", () => {});

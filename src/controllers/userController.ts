@@ -110,7 +110,7 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 // get user profile of profileId
 export const getUserProfile = async (req: Request, res: Response) => {
-  const profileId = parseInt(req.params.ProfileId!);
+  const profileId = req.params.ProfileId;
   if (!profileId) {
     return res.status(400).json({ error: "Empty profileId" });
   }

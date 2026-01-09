@@ -12,7 +12,7 @@ export default async function authMiddleware(
   }
 
   const decodedData = (await Jwt.verify(token, process.env.JWT_SECRET!)) as {
-    id: number;
+    id: string;
   };
 
   if (!decodedData) {

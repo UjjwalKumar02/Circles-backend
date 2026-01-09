@@ -33,9 +33,9 @@ export const createCommunity = async (req: Request, res: Response) => {
 // join a community
 export const joinCommunity = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
 
-  if (!userId || isNaN(communityId)) {
+  if (!userId || !communityId) {
     return res.status(400).json({ error: "Missing required values" });
   }
 
@@ -58,9 +58,10 @@ export const joinCommunity = async (req: Request, res: Response) => {
 // exit a community
 export const exitCommunity = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
 
   if (!userId || !communityId) {
+    console.log("userId missing");
     return res.status(400).json({ error: "Missing required values" });
   }
 
@@ -114,30 +115,46 @@ export const getUserCommunities = async (req: Request, res: Response) => {
 };
 
 // get all posts of a community [will add pagination later]
-export const getCommunityPosts = async (req: Request, res: Response) => {
-  const communityId = Number(req.params.communityId);
+export const getCommunityDetail = async (req: Request, res: Response) => {
+  const userId = req.userId;
+  const slug = req.params.slug;
 
-  if (isNaN(communityId)) {
-    return res.status(400).json({ error: "Missing id" });
+  if (!slug || !userId) {
+    return res.status(400).json({ error: "Empty params" });
   }
 
   try {
-    const posts = await prisma.community.findUnique({
-      where: { id: communityId },
+    const commuintyDetail = await prisma.community.findUnique({
+      where: { slug },
       select: {
+        id: true,
+        name: true,
+        description: true,
+        members: {
+          select: { role: true },
+          where: { userId },
+        },
         posts: {
+          orderBy: { createdAt: "desc" },
           select: {
+            id: true,
             content: true,
             createdAt: true,
             author: {
               select: { username: true, avatar: true },
+            },
+            likes: {
+              select: { id: true },
+            },
+            comments: {
+              select: { id: true },
             },
           },
         },
       },
     });
 
-    res.status(200).json(posts);
+    res.status(200).json(commuintyDetail);
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Error in getting community posts" });
@@ -146,9 +163,9 @@ export const getCommunityPosts = async (req: Request, res: Response) => {
 
 // get community details
 export const getCommunityDetails = async (req: Request, res: Response) => {
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
 
-  if (isNaN(communityId)) {
+  if (!communityId) {
     return res.status(400).json({ error: "Missing id" });
   }
 
@@ -206,10 +223,10 @@ export const searchCommunity = async (req: Request, res: Response) => {
 // update community details if admin
 export const updateCommunityDetails = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
   const { name, description } = req.body;
 
-  if (!userId || isNaN(communityId) || !name || !description) {
+  if (!userId || !communityId || !name || !description) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -246,10 +263,10 @@ export const updateCommunityDetails = async (req: Request, res: Response) => {
 // kick member if admin
 export const kickMember = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
   const memberId = Number(req.params.memberId);
 
-  if (!userId || isNaN(communityId) || isNaN(memberId)) {
+  if (!userId || !communityId || isNaN(memberId)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -274,7 +291,7 @@ export const kickMember = async (req: Request, res: Response) => {
     await prisma.communityMember.delete({
       where: {
         userId_communityId: {
-          userId: memberId,
+          userId,
           communityId,
         },
       },
@@ -290,10 +307,10 @@ export const kickMember = async (req: Request, res: Response) => {
 // delete post if admin
 export const deletePost = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
   const postId = Number(req.params.postId);
 
-  if (!userId || isNaN(communityId) || isNaN(postId)) {
+  if (!userId || !communityId || isNaN(postId)) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -332,9 +349,9 @@ export const deletePost = async (req: Request, res: Response) => {
 // delete community
 export const deleteCommunity = async (req: Request, res: Response) => {
   const userId = req.userId;
-  const communityId = Number(req.params.communityId);
+  const communityId = req.params.communityId;
 
-  if (!userId || isNaN(communityId)) {
+  if (!userId || !communityId) {
     return res.status(400).json({ error: "Missing required values" });
   }
 

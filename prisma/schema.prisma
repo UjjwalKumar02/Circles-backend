@@ -19,7 +19,7 @@ enum CommunityRole {
 }
 
 model User {
-  id          Int               @id @default(autoincrement())
+  id          String            @id @default(uuid())
   googleId    String
   username    String            @unique
   email       String            @unique
@@ -34,7 +34,7 @@ model User {
 }
 
 model Community {
-  id          Int               @id @default(autoincrement())
+  id          String            @id @default(uuid())
   name        String            @unique
   slug        String            @unique
   description String?
@@ -45,8 +45,8 @@ model Community {
 
 model CommunityMember {
   id          Int           @id @default(autoincrement())
-  userId      Int
-  communityId Int
+  userId      String
+  communityId String
   role        CommunityRole @default(MEMBER)
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   community   Community     @relation(fields: [communityId], references: [id], onDelete: Cascade)
@@ -58,8 +58,8 @@ model Post {
   id          Int       @id @default(autoincrement())
   content     String
   type        PostType  @default(NORMAL)
-  authorId    Int
-  communityId Int
+  authorId    String
+  communityId String
   likes       Like[]
   comments    Comment[]
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
@@ -68,11 +68,11 @@ model Post {
 }
 
 model Like {
-  id        Int  @id @default(autoincrement())
+  id        Int    @id @default(autoincrement())
   postId    Int
-  likedById Int
-  post      Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  likedBy   User @relation(fields: [likedById], references: [id], onDelete: Cascade)
+  likedById String
+  post      Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  likedBy   User   @relation(fields: [likedById], references: [id], onDelete: Cascade)
 
   @@unique([postId, likedById])
 }
@@ -81,7 +81,7 @@ model Comment {
   id        Int      @id @default(autoincrement())
   content   String
   postId    Int
-  authorId  Int
+  authorId  String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

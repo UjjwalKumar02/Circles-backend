@@ -1,8 +1,23 @@
-export default function generateSlug(name: string): string {
-  return name
+export function generateSlug(name: string): string {
+  const baseSlug = name
     .toLowerCase()
     .trim()
-    .replace(/[\s\_]+/g, "-")       // replace spaces/underscores with hyphens
-    .replace(/[^a-z0-9\-]/g, "")    // remove invalid characters
-    .replace(/-+/g, "-");           // collapse multiple hyphens
+    .replace(/[\s_]+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-");
+
+  const randomSuffix = generateRandomString(10);
+
+  return `${baseSlug}-${randomSuffix}`;
+}
+
+function generateRandomString(length: number): string {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+
+  for (let i = 0; i < length; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return result;
 }

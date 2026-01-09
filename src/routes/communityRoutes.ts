@@ -5,8 +5,7 @@ import {
   deleteCommunity,
   deletePost,
   exitCommunity,
-  getCommunityDetails,
-  getCommunityPosts,
+  getCommunityDetail,
   getUserCommunities,
   joinCommunity,
   kickMember,
@@ -29,10 +28,7 @@ router.post("/exit/:communityId", authMiddleware, exitCommunity);
 router.get("/user/bulk", authMiddleware, getUserCommunities);
 
 // get all posts of a community
-router.get("/:communityId/post/bulk", authMiddleware, getCommunityPosts);
-
-// get community details
-router.get("/:communityId/profile", authMiddleware, getCommunityDetails);
+router.get("/:slug", authMiddleware, getCommunityDetail);
 
 // search community by community name
 router.get("/search/:communityName", authMiddleware, searchCommunity);
@@ -52,9 +48,3 @@ router.post("/:communityId/post/:postId/delete", authMiddleware, deletePost);
 router.delete("/:communityId/delete", authMiddleware, deleteCommunity);
 
 export default router;
-
-// exit a joined community and pass admin controls if admin
-// router.post("/join/:communityId", () => {});
-
-// get top 10 trending communities
-// router.get("/trending", () => {});
