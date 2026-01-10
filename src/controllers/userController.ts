@@ -25,7 +25,7 @@ export const handleGoogleLogin = (req: Request, res: Response) => {
       path: "/",
     });
 
-    res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
+    res.redirect(`${process.env.FRONTEND_URL}/home`);
   } catch (error) {
     res.status(500).json({ error: error });
   }
