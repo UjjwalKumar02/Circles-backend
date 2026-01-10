@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "buid": "tsc -b && node dist/src/index.js",
+    "buid": "tsc -b",
     "start": "node dist/src/index.js",
-    "dev": "tsc -b && node dist/src/index.js"
+    "dev": "tsc -b && node index.js"
   },
   "keywords": [],
   "author": "",
