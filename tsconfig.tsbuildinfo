@@ -1,1 +1,1 @@
-{"root":["./src/index.ts","./src/config/passport.ts","./src/controllers/usercontroller.ts","./src/routes/authroutes.ts"],"version":"5.9.3"}
+{"root":["./prisma.config.ts"],"errors":true,"version":"5.9.3"}

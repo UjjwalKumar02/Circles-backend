@@ -2,7 +2,7 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": ".",
+    "rootDir": "./",
     "outDir": "./dist",
 
     // Environment Settings
@@ -40,6 +40,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-  }, 
-  "include": ["prisma/src/**/*", "prisma.config.ts"]
+  },
+  "include": ["src/**/*", "prisma.config.ts"],
+  "exclude": ["node_modules/"]
 }
