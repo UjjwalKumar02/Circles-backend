@@ -10,6 +10,7 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import type WebSocket from "ws";
 
+// Express app
 const app = express();
 const port = process.env.PORT;
 
@@ -17,6 +18,7 @@ const port = process.env.PORT;
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
+// Middlewares
 app.use(passport.initialize());
 app.use(
   cors({
@@ -27,7 +29,7 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-// routes
+// Routes
 app.use("/api/user", userRouter);
 app.use("/api/post", postRouter);
 app.use("/api/community", communityRouter);
@@ -52,13 +54,37 @@ wss.on("connection", (socket) => {
       });
     }
 
-    // If type is message
+    // If type is chat
     if (parsedData.type === "chat") {
       let roomUsers = users.filter((u) => u.roomId === parsedData.roomId);
 
       roomUsers.forEach((u) =>
         u.ws.send(
           JSON.stringify({
+            type: "chat",
+            post: {
+              id: parsedData.message.id,
+              content: parsedData.message.content,
+              createdAt: parsedData.message.createdAt,
+              likeCount: parsedData.message.likeCount,
+              commentCount: parsedData.message.commentCount,
+              authorName: parsedData.message.authorName,
+              authorAvatar: parsedData.message.authorAvatar,
+            },
+          })
+        )
+      );
+    }
+
+    // If type is toggle_like
+    if (parsedData.type === "toggle_like") {
+      let roomUsers = users.filter((u) => u.roomId === parsedData.roomId);
+
+      roomUsers.forEach((u) =>
+        u.ws.send(
+          JSON.stringify({
+            type: "toggle_like",
+            index: parsedData.index,
             post: {
               id: parsedData.message.id,
               content: parsedData.message.content,
@@ -84,6 +110,7 @@ wss.on("connection", (socket) => {
   });
 });
 
+// Running server
 server.listen(port, () => {
   console.log(`Server is listening on ${port}`);
 });
