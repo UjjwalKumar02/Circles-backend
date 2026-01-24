@@ -6,6 +6,7 @@ Backend of [Circles](https://github.com/UjjwalKumar02/Circles) project
 
 - **Framework** : Express.js
 - **Language** : TypeScript
+- **WebSocket** : WS
 - **Database** : PostgreSQL
 - **ORM** : Prisma
 - **Authentication** : Google oAuth with JWT (JsonWebToken)
