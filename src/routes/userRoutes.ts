@@ -3,7 +3,6 @@ import passport from "passport";
 import {
   deleteUser,
   getProfileDetails,
-  getUserProfile,
   handleGoogleLogin,
   handleLogout,
   updateProfileDetails,
@@ -15,7 +14,7 @@ const router = Router();
 // google authentication route
 router.get(
   "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  passport.authenticate("google", { scope: ["profile", "email"] }),
 );
 
 // google callback route
@@ -25,7 +24,7 @@ router.get(
     failureRedirect: "/signin",
     session: false,
   }),
-  handleGoogleLogin
+  handleGoogleLogin,
 );
 
 // logout route
@@ -39,8 +38,5 @@ router.put("/profile", authMiddleware, updateProfileDetails);
 
 // delete account
 router.delete("/profile", authMiddleware, deleteUser);
-
-// get profile details of profileId
-router.get("/profile/:profileId", authMiddleware, getUserProfile);
 
 export default router;

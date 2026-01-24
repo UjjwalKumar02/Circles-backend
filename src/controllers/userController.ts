@@ -73,6 +73,8 @@ export const updateProfileDetails = async (req: Request, res: Response) => {
 
   const { username, description } = req.body;
   if (!username || !description) {
+    console.log(username, description, userId);
+    console.log("Empty request body");
     res.status(400).json({ error: "Empty request body" });
   }
   try {
@@ -86,7 +88,8 @@ export const updateProfileDetails = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "user profile updated successfully" });
   } catch (error) {
-    res.status(400).json({ error: error });
+    console.log(error);
+    res.status(500).json({ error: error });
   }
 };
 
@@ -103,28 +106,6 @@ export const deleteUser = async (req: Request, res: Response) => {
 
     res.cookie("auth_token", "", { maxAge: 1 });
     res.status(200).json({ message: "user deleted" });
-  } catch (error) {
-    res.status(400).json({ error: error });
-  }
-};
-
-// get user profile of profileId
-export const getUserProfile = async (req: Request, res: Response) => {
-  const profileId = req.params.ProfileId;
-  if (!profileId) {
-    return res.status(400).json({ error: "Empty profileId" });
-  }
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: profileId },
-      select: {
-        username: true,
-        avatar: true,
-        description: true,
-      },
-    });
-
-    res.status(200).json(user);
   } catch (error) {
     res.status(400).json({ error: error });
   }

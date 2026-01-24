@@ -2,31 +2,49 @@ import type { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import generateSlug from "../utils/helpers/generateSlug.js";
 
-// create community
+// Create community
 export const createCommunity = async (req: Request, res: Response) => {
-  const userId = req.userId;
   const { name, description } = req.body;
+  const userId = req.userId;
 
-  if (!name || !description || !userId) {
-    return res.status(400).json({ error: "Missing required values" });
+  if (
+    !name ||
+    name === "" ||
+    !description ||
+    description === "" ||
+    !userId ||
+    userId === ""
+  ) {
+    return res.status(404).json({ error: "Empty parameters!" });
   }
 
   const slug = generateSlug(name);
 
+  if (!slug || slug === "") {
+    return res.status(404).json({ error: "Empty slug!" });
+  }
+
   try {
-    await prisma.community.create({
+    const community = await prisma.community.create({
       data: {
         name,
         slug,
         description,
-        members: { create: { userId, role: "ADMIN" } },
       },
     });
 
-    res.status(200).json({ message: "community created" });
+    await prisma.communityMember.create({
+      data: {
+        userId,
+        communityId: community.id,
+        role: "ADMIN",
+      },
+    });
+
+    res.status(200).json({ message: "Community created" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "error in community creation" });
+    res.status(500).json({ error: "Error while creating community" });
   }
 };
 
@@ -72,7 +90,6 @@ export const exitCommunity = async (req: Request, res: Response) => {
           userId,
           communityId,
         },
-        role: "MEMBER",
       },
     });
 
@@ -161,83 +178,30 @@ export const getCommunityDetail = async (req: Request, res: Response) => {
   }
 };
 
-// get community details
-export const getCommunityDetails = async (req: Request, res: Response) => {
-  const communityId = req.params.communityId;
-
-  if (!communityId) {
-    return res.status(400).json({ error: "Missing id" });
-  }
-
-  try {
-    const community = await prisma.community.findUnique({
-      where: { id: communityId },
-      select: {
-        name: true,
-        description: true,
-        createdAt: true,
-        members: {
-          select: {
-            role: true,
-            user: { select: { username: true, avatar: true } },
-          },
-        },
-      },
-    });
-
-    res.status(200).json(community);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Error in getting community details" });
-  }
-};
-
-// search community by communityName
-export const searchCommunity = async (req: Request, res: Response) => {
-  const communityName = req.params.communityName;
-
-  if (!communityName) {
-    return res.status(400).json({ error: "Missing communityName" });
-  }
-
-  try {
-    const community = await prisma.community.findUnique({
-      where: { name: communityName },
-      select: {
-        name: true,
-        description: true,
-      },
-    });
-
-    if (!community) {
-      return res.status(204).json({ communityFound: false });
-    }
-
-    res.status(200).json(community);
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Error in searching community" });
-  }
-};
-
-// update community details if admin
+// Update community details
 export const updateCommunityDetails = async (req: Request, res: Response) => {
-  const userId = req.userId;
   const communityId = req.params.communityId;
   const { name, description } = req.body;
+  const userId = req.userId;
 
-  if (!userId || !communityId || !name || !description) {
-    return res.status(400).json({ error: "Missing required fields" });
+  if (
+    !communityId ||
+    communityId === "" ||
+    !name ||
+    name === "" ||
+    !description ||
+    description === "" ||
+    !userId ||
+    userId === ""
+  ) {
+    console.log("Empty parameters!");
+    return res.status(404).json({ error: "Empty parameters!" });
   }
 
   try {
     const user = await prisma.communityMember.findUnique({
-      where: {
-        userId_communityId: { userId, communityId },
-      },
-      select: {
-        role: true,
-      },
+      where: { userId_communityId: { userId, communityId } },
+      select: { role: true },
     });
 
     const isAdmin = user?.role === "ADMIN";
@@ -256,93 +220,7 @@ export const updateCommunityDetails = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Community details updated" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Error in updating community details" });
-  }
-};
-
-// kick member if admin
-export const kickMember = async (req: Request, res: Response) => {
-  const userId = req.userId;
-  const communityId = req.params.communityId;
-  const memberId = Number(req.params.memberId);
-
-  if (!userId || !communityId || isNaN(memberId)) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  try {
-    const user = await prisma.communityMember.findUnique({
-      where: {
-        userId_communityId: { userId, communityId },
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    const isAdmin = user?.role === "ADMIN";
-
-    if (!isAdmin) {
-      return res
-        .status(400)
-        .json({ error: "Restricted action for non-admins" });
-    }
-
-    await prisma.communityMember.delete({
-      where: {
-        userId_communityId: {
-          userId,
-          communityId,
-        },
-      },
-    });
-
-    res.status(200).json({ message: "Member kicked" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Error in kicking member" });
-  }
-};
-
-// delete post if admin
-export const deletePost = async (req: Request, res: Response) => {
-  const userId = req.userId;
-  const communityId = req.params.communityId;
-  const postId = Number(req.params.postId);
-
-  if (!userId || !communityId || isNaN(postId)) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
-
-  try {
-    const user = await prisma.communityMember.findUnique({
-      where: {
-        userId_communityId: { userId, communityId },
-      },
-      select: {
-        role: true,
-      },
-    });
-
-    const isAdmin = user?.role === "ADMIN";
-
-    if (!isAdmin) {
-      return res
-        .status(400)
-        .json({ error: "Restricted action for non-admins" });
-    }
-
-    await prisma.post.delete({
-      where: {
-        id: postId,
-        communityId,
-      },
-    });
-
-    res.status(200).json({ message: "Member kicked" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Error in kicking member" });
+    res.status(500).json({ error: "Error while updating community details" });
   }
 };
 
@@ -351,23 +229,23 @@ export const deleteCommunity = async (req: Request, res: Response) => {
   const userId = req.userId;
   const communityId = req.params.communityId;
 
-  if (!userId || !communityId) {
-    return res.status(400).json({ error: "Missing required values" });
+  if (!userId || userId === "" || !communityId || communityId === "") {
+    return res.status(400).json({ error: "Missing parameters" });
   }
 
   try {
-    const isAdmin = await prisma.communityMember.findUnique({
+    const membership = await prisma.communityMember.findUnique({
       where: {
         userId_communityId: {
           userId,
           communityId,
         },
-        role: "ADMIN",
       },
+      select: { role: true },
     });
 
-    if (!isAdmin) {
-      return res.status(400).json({ error: "Restricted action to non-admins" });
+    if (membership?.role !== "ADMIN") {
+      return res.status(402).json({ error: "Restricted action to non-admins" });
     }
 
     await prisma.community.delete({
