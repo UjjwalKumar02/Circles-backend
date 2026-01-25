@@ -62,6 +62,7 @@ model Post {
   authorId    String
   communityId String
   likes       Like[]
+  likesCount  Int       @default(0)
   comments    Comment[]
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   community   Community @relation(fields: [communityId], references: [id], onDelete: Cascade)

@@ -24,7 +24,7 @@ app.use(
   cors({
     origin: [process.env.FRONTEND_URL!],
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(cookieParser());
@@ -67,35 +67,30 @@ wss.on("connection", (socket) => {
               content: parsedData.message.content,
               createdAt: parsedData.message.createdAt,
               likeCount: parsedData.message.likeCount,
-              commentCount: parsedData.message.commentCount,
               authorName: parsedData.message.authorName,
               authorAvatar: parsedData.message.authorAvatar,
             },
-          })
-        )
+          }),
+        ),
       );
     }
 
     // If type is toggle_like
     if (parsedData.type === "toggle_like") {
-      let roomUsers = users.filter((u) => u.roomId === parsedData.roomId);
+      let roomUsers = users.filter(
+        (u) => u.roomId === parsedData.roomId && u.ws !== socket,
+      );
 
       roomUsers.forEach((u) =>
         u.ws.send(
           JSON.stringify({
             type: "toggle_like",
-            index: parsedData.index,
             post: {
               id: parsedData.message.id,
-              content: parsedData.message.content,
-              createdAt: parsedData.message.createdAt,
               likeCount: parsedData.message.likeCount,
-              commentCount: parsedData.message.commentCount,
-              authorName: parsedData.message.authorName,
-              authorAvatar: parsedData.message.authorAvatar,
             },
-          })
-        )
+          }),
+        ),
       );
     }
 

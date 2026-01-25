@@ -16,6 +16,7 @@ export const createPost = async (req: Request, res: Response) => {
         content,
         authorId: userId,
         communityId,
+        likesCount: 0,
       },
     });
 
@@ -45,24 +46,43 @@ export const toggleLike = async (req: Request, res: Response) => {
       },
     });
 
+    // If like exists
     if (existing) {
-      await prisma.like.delete({
-        where: {
-          postId_likedById: {
-            postId,
-            likedById: userId,
+      await prisma.$transaction(async (tx) => {
+        await tx.like.delete({
+          where: {
+            postId_likedById: {
+              postId,
+              likedById: userId,
+            },
           },
-        },
+        });
+
+        await tx.post.update({
+          where: { id: postId },
+          data: {
+            likesCount: { decrement: 1 },
+          },
+        });
       });
 
       return res.status(200).json({ liked: false });
     }
 
-    await prisma.like.create({
-      data: {
-        postId,
-        likedById: userId,
-      },
+    // If like doesn't not exists
+    await prisma.$transaction(async (tx) => {
+      await tx.like.create({
+        data: {
+          postId,
+          likedById: userId,
+        },
+      });
+      await tx.post.update({
+        where: { id: postId },
+        data: {
+          likesCount: { increment: 1 },
+        },
+      });
     });
 
     return res.status(200).json({ liked: true });

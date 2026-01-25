@@ -34,7 +34,7 @@ export const handleGoogleLogin = (req: Request, res: Response) => {
 // logout function
 export const handleLogout = (req: Request, res: Response) => {
   try {
-    res.cookie("auth_token", "", { maxAge: 1 });
+    res.clearCookie("auth_token");
     res.status(200).json({ message: "user logout successfully" });
   } catch (error) {
     res.status(500).json({ error: error });
@@ -104,7 +104,7 @@ export const deleteUser = async (req: Request, res: Response) => {
       where: { id: userId },
     });
 
-    res.cookie("auth_token", "", { maxAge: 1 });
+    res.clearCookie("auth_token");
     res.status(200).json({ message: "user deleted" });
   } catch (error) {
     res.status(400).json({ error: error });

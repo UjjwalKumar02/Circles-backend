@@ -153,6 +153,7 @@ export const getCommunityDetail = async (req: Request, res: Response) => {
         },
         posts: {
           orderBy: { createdAt: "desc" },
+          take: 200,
           select: {
             id: true,
             content: true,
@@ -160,11 +161,9 @@ export const getCommunityDetail = async (req: Request, res: Response) => {
             author: {
               select: { username: true, avatar: true },
             },
+            likesCount: true,
             likes: {
-              select: { id: true },
-            },
-            comments: {
-              select: { id: true },
+              where: { likedById: userId },
             },
           },
         },
