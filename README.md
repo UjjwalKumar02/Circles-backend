@@ -10,4 +10,4 @@ Backend of [Circles](https://github.com/UjjwalKumar02/Circles) project
 - **Database** : PostgreSQL
 - **ORM** : Prisma
 - **Authentication** : Google oAuth with JWT (JsonWebToken)
-- **Schema Validation** : Zod
+<!-- - **Schema Validation** : Zod -->
